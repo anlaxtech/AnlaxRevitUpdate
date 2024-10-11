@@ -35,6 +35,5 @@
             Height="20"><Run Language="ru-ru" Text="Автообновление плагина Мераком"/></TextBlock>
         <Button x:Name="ButtonLog" Style="{StaticResource ButtonBase}" Content="Лог обновления" HorizontalAlignment="Left" Margin="162,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonLog_Click" />
         <Button x:Name="ButtonRestart" Style="{StaticResource ButtonBase}" Content="Перезапустить" HorizontalAlignment="Left" Margin="304,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonRestart_Click" />
-
     </Grid>
 </Window>

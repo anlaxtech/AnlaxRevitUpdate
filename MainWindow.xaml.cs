@@ -66,7 +66,7 @@ namespace AnlaxRevitUpdate
             InitializeComponent();
             Thread.Sleep(5000);
             bool runs = IsRevitRunning(RevitVersion);
-            if (runs) // Если процесс запущен попробуем остановить поток на 10 секунд и затем еще раз протестируем
+            if (runs)
             {
                 Thread.Sleep(5000);
             }
@@ -77,10 +77,33 @@ namespace AnlaxRevitUpdate
                 {
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax";
                     Show();
+
+                    // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
+                    ProgressBarDownload.Maximum = DllPaths.Count + 1;
+                    int progress = 0;
 
+                    foreach (string dll in DllPaths)
+                    {
+                        HotReload(dll);
 
+                        // Обновляем прогресс
+                        progress++;
+                        Dispatcher.Invoke(() =>
+                        {
+                            ProgressBarDownload.Value = progress;
+                            TextBlockDownload.Text = $"Обновление: {progress} из {DllPaths.Count + 1}";
+                        });
+                    }
 
+                    ReloadMainPlug();
+
+                    // После завершения ставим максимальное значение
+                    Dispatcher.Invoke(() =>
+                    {
+                        ProgressBarDownload.Value = ProgressBarDownload.Maximum;
+                        TextBlockDownload.Text = "Обновление завершено!";
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -92,7 +115,6 @@ namespace AnlaxRevitUpdate
                 TextBlockMessage.Text = "Для проверки обновлений необходимо закрыть все сессии ревита";
                 Timer timer = new Timer(CloseWindowCallback, null, 3000, Timeout.Infinite);
             }
-
         }
         private void CloseWindowCallback(object state)
         {
@@ -102,6 +124,18 @@ namespace AnlaxRevitUpdate
                 // Закрыть окно
                 Close();
             });
+        }
+        private string ReloadMainPlug()
+        {
+            string pathToBaseDll = System.IO.Path.Combine(PluginDirectory, "AnlaxBase.dll");
+            string token = "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";
+            string userName = "anlaxtech";
+            string repposotoryName = "AnlaxTemplate";
+            var directoryInfo = new System.IO.DirectoryInfo(PluginDirectory);
+            string plugFolderName = directoryInfo.Parent.Name;
+            GitHubDownloader gitHubDownloader = new GitHubDownloader(pathToBaseDll, IsDebug, token, userName, repposotoryName, plugFolderName);
+            string status =gitHubDownloader.HotReloadPlugin(true);
+            return status;
         }
         private string HotReload(string path)
         {
