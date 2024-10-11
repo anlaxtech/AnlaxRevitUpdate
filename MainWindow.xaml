@@ -1,0 +1,40 @@
+﻿<Window x:Class="AnlaxRevitUpdate.MainWindow"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="#F2F2F2"
+        WindowStartupLocation="CenterScreen"
+        Title="NewFillParameters" 
+        Height="320"
+        Width="550">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/AnlaxPackage;component/ViewElementsTemplate.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Button x:Name="ButtonClose" Style="{StaticResource ButtonBase}" Content="Ок" HorizontalAlignment="Left" Margin="440,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonClose_Click"/>
+        <Button x:Name="ButtonAnik" Style="{StaticResource ButtonBase}" Content="Анекдот" HorizontalAlignment="Left" Margin="10,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonAnik_Click"/>
+        <TextBlock x:Name="TextBlockMessage" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,34,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="525" Height="181"/>
+        <ProgressBar x:Name="ProgressBarDownload" Style="{StaticResource CustomProgressBarStyle}" HorizontalAlignment="Center"  Margin="0,235,0,0" VerticalAlignment="Top" Width="530"/>
+        <TextBlock x:Name="TextBlockDownload" Style="{StaticResource BaseText}"   HorizontalAlignment="Left" Margin="225,208,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="315" Height="22"><Run Language="ru-ru" Text="Начало загрузки"/></TextBlock>
+        <Button x:Name="ButtonCancel" Content="Отмена" HorizontalAlignment="Left"  Margin="520,0,0,0" VerticalAlignment="Top" Style="{StaticResource CloseButton}" Click="Button_Click_Cancel"/>
+        <TextBlock x:Name="Header" Style="{StaticResource HeaderTextBlock}"
+            HorizontalAlignment="Left"
+            Margin="14,6,0,0"
+            TextWrapping="Wrap"
+            VerticalAlignment="Top"
+            Width="297"
+            Height="20"><Run Language="ru-ru" Text="Автообновление плагина Мераком"/></TextBlock>
+        <Button x:Name="ButtonLog" Style="{StaticResource ButtonBase}" Content="Лог обновления" HorizontalAlignment="Left" Margin="162,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonLog_Click" />
+        <Button x:Name="ButtonRestart" Style="{StaticResource ButtonBase}" Content="Перезапустить" HorizontalAlignment="Left" Margin="304,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonRestart_Click" />
+
+    </Grid>
+</Window>
