@@ -39,7 +39,21 @@ namespace AnlaxRevitUpdate
                 var directoryInfo = new System.IO.DirectoryInfo(PluginAutoUpdateDirectory);
 
                 // Поднимаемся на 3 уровня вверх
-                var targetDirectory = directoryInfo.Parent.Parent.Parent;
+                var targetDirectory = directoryInfo.Parent.Parent;
+
+                // Получаем название папки (в вашем случае это версия Revit)
+                string revitVersion = targetDirectory.Name;
+                return revitVersion;
+            }
+        }
+        public string FolderPluginMain
+        {
+            get
+            {
+                var directoryInfo = new System.IO.DirectoryInfo(PluginAutoUpdateDirectory);
+
+                // Поднимаемся на 3 уровня вверх
+                var targetDirectory = directoryInfo.Parent;
 
                 // Получаем название папки (в вашем случае это версия Revit)
                 string revitVersion = targetDirectory.Name;
@@ -50,7 +64,7 @@ namespace AnlaxRevitUpdate
         {
             get
             {
-                if (PluginAutoUpdateDirectory.Contains("Anlax dev"))
+                if (PluginAutoUpdateDirectory.Contains("AnlaxDev"))
                 {
                     return true;
                 }
@@ -62,22 +76,28 @@ namespace AnlaxRevitUpdate
 
         public MainWindow()
         {
+            // Формируем путь к RevitAPIUI.dll на основе версии Revit
+
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
+            Assembly.LoadFrom(revitApiUiPath);
             InitializeComponent();
-            Thread.Sleep(5000);
             bool runs = IsRevitRunning(RevitVersion);
+
             if (runs)
             {
                 Thread.Sleep(5000);
             }
+
             runs = IsRevitRunning(RevitVersion);
+
             if (!runs)
             {
                 try
                 {
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax";
                     Show();
-
+                    MessageBox.Show("sda");
                     // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
                     ProgressBarDownload.Maximum = DllPaths.Count + 1;
@@ -85,7 +105,15 @@ namespace AnlaxRevitUpdate
 
                     foreach (string dll in DllPaths)
                     {
-                        HotReload(dll);
+                        // Обновляем UI до начала загрузки DLL
+                        string currentDllMessage = $"Загрузка {dll}...";
+                        Dispatcher.Invoke(() =>
+                        {
+                            TextBlockMessage.Text += $"{currentDllMessage}\n";
+                        });
+
+                        // Выполняем обновление плагина
+                        string message = HotReload(dll);
 
                         // Обновляем прогресс
                         progress++;
@@ -93,16 +121,21 @@ namespace AnlaxRevitUpdate
                         {
                             ProgressBarDownload.Value = progress;
                             TextBlockDownload.Text = $"Обновление: {progress} из {DllPaths.Count + 1}";
+
+                            // Добавляем информацию о результате обновления
+                            TextBlockMessage.Text += $"{message}\n";
                         });
                     }
 
+                    // Обновляем основной плагин
                     ReloadMainPlug();
 
-                    // После завершения ставим максимальное значение
+                    // После завершения ставим максимальное значение и сообщаем о завершении
                     Dispatcher.Invoke(() =>
                     {
                         ProgressBarDownload.Value = ProgressBarDownload.Maximum;
                         TextBlockDownload.Text = "Обновление завершено!";
+                        TextBlockMessage.Text += "Все обновления завершены!\n";
                     });
                 }
                 catch (Exception ex)
@@ -130,35 +163,62 @@ namespace AnlaxRevitUpdate
             string pathToBaseDll = System.IO.Path.Combine(PluginDirectory, "AnlaxBase.dll");
             string token = "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";
             string userName = "anlaxtech";
-            string repposotoryName = "AnlaxTemplate";
+            string repposotoryName = "AnlaxBase";
             var directoryInfo = new System.IO.DirectoryInfo(PluginDirectory);
             string plugFolderName = directoryInfo.Parent.Name;
-            GitHubDownloader gitHubDownloader = new GitHubDownloader(pathToBaseDll, IsDebug, token, userName, repposotoryName, plugFolderName);
-            string status =gitHubDownloader.HotReloadPlugin(true);
+            GitHubBaseDownload gitHubDownloader = new GitHubBaseDownload(pathToBaseDll, IsDebug, token, userName, repposotoryName, "AnlaxBase");
+            string status =gitHubDownloader.HotReloadPlugin(false);
             return status;
         }
         private string HotReload(string path)
         {
-            byte[] assemblyBytes = File.ReadAllBytes(path);
-            Assembly assembly = Assembly.Load(assemblyBytes);
-            // Ищем класс "ApplicationStart"
-            RevitRibbonPanelCustom revitRibbonPanelCustom = new RevitRibbonPanelCustom("похер", "пофигу", path, new List<PushButtonData>());
-            Type typeStart = assembly.GetTypes()
-.Where(t => t.GetInterfaces().Any(i => i == typeof(IApplicationStartAnlax)))
-.FirstOrDefault();
-
-            if (typeStart != null)
+            try
             {
-                object instance = Activator.CreateInstance(typeStart);
-                MethodInfo onStartupMethod = typeStart.GetMethod("DownloadPluginUpdate");
-                var allMethods = typeStart.GetMethods();
-                if (onStartupMethod != null)
+                // Формируем путь к RevitAPIUI.dll на основе версии Revit
+                string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
+                Assembly.LoadFrom(revitApiUiPath);
+                byte[] assemblyBytes = File.ReadAllBytes(path);
+                Assembly assembly = Assembly.Load(assemblyBytes);
+                Type typeStart = null;
+                try
                 {
-                    string message = (string)onStartupMethod.Invoke(instance, new object[] { revitRibbonPanelCustom, IsDebug });
-                    return message;
+                    // Попытка получить типы
+                    typeStart = assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
                 }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
+                    var loadedTypes = ex.Types.Where(t => t != null);
+                    typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                }
+
+                if (typeStart != null)
+                {
+                    object instance = Activator.CreateInstance(typeStart);
+                    MethodInfo onStartupMethod = typeStart.GetMethod("DownloadPluginUpdate");
+
+                    if (onStartupMethod != null)
+                    {
+                        try
+                        {
+                            // Вызов метода через Invoke с обработкой исключений
+                            string message = (string)onStartupMethod.Invoke(instance, new object[] { path, IsDebug });
+                            return message;
+                        }
+                        catch (TargetInvocationException tie)
+                        {
+                            // Это исключение возникает, если ошибка произошла внутри вызванного метода
+                            return "Ошибка внутри метода DownloadPluginUpdate: " + tie.InnerException?.Message;
+                        }
+                    }
+                }
+
+                return "Класс с методом DownloadPluginUpdate не найден";
             }
-            return "Ошибка обновления";
+            catch (Exception ex)
+            {
+                return "Общая ошибка: " + ex.Message;
+            }
         }
 
 
@@ -235,26 +295,29 @@ namespace AnlaxRevitUpdate
                     // Загружаем сборку из байтов
                     var assembly = Assembly.Load(assemblyBytes);
 
-                    // Ищем класс "ApplicationStart"
-                    Type typeStart = assembly.GetTypes()
-    .Where(t => t.GetInterfaces().Any(i => i == typeof(IApplicationStartAnlax)))
-    .FirstOrDefault();
+                    Type typeStart = null;
+                    try
+                    {
+                        // Попытка получить типы
+                        var types = assembly.GetTypes();
+                        typeStart = types.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                    }
+                    catch (ReflectionTypeLoadException ex)
+                    {
+                        // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
+                        var loadedTypes = ex.Types.Where(t => t != null);
+                        typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                    }
 
                     if (typeStart != null)
                     {
-                        // Ищем метод "GetRevitRibbonPanelCustom"
-                        var method = typeStart.GetMethod("GetRevitRibbonPanelCustom");
-
-                        if (method != null)
-                        {
-                            result.Add(dll);
-                        }
+                        result.Add(dll);
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Логируем ошибки
-                    Console.WriteLine($"Ошибка при обработке {dll}: {ex.Message}");
+                    // Логируем ошибки, если нужно
+                    // Console.WriteLine($"Ошибка при обработке {dll}: {ex.Message}");
                 }
             }
 

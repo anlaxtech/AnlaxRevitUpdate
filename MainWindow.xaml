@@ -22,17 +22,17 @@
     <Grid>
         <Button x:Name="ButtonClose" Style="{StaticResource ButtonBase}" Content="Ок" HorizontalAlignment="Left" Margin="440,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonClose_Click"/>
         <Button x:Name="ButtonAnik" Style="{StaticResource ButtonBase}" Content="Анекдот" HorizontalAlignment="Left" Margin="10,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonAnik_Click"/>
-        <TextBlock x:Name="TextBlockMessage" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,34,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="525" Height="181"/>
+        <TextBlock x:Name="TextBlockMessage" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,34,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="525" Height="164" FontSize="10"/>
         <ProgressBar x:Name="ProgressBarDownload" Style="{StaticResource CustomProgressBarStyle}" HorizontalAlignment="Center"  Margin="0,235,0,0" VerticalAlignment="Top" Width="530"/>
-        <TextBlock x:Name="TextBlockDownload" Style="{StaticResource BaseText}"   HorizontalAlignment="Left" Margin="225,208,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="315" Height="22"><Run Language="ru-ru" Text="Начало загрузки"/></TextBlock>
+        <TextBlock x:Name="TextBlockDownload" Style="{StaticResource BaseText}"   HorizontalAlignment="Center" Margin="0,208,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="530" Height="22"><Run Language="ru-ru" Text="Начало загрузки"/></TextBlock>
         <Button x:Name="ButtonCancel" Content="Отмена" HorizontalAlignment="Left"  Margin="520,0,0,0" VerticalAlignment="Top" Style="{StaticResource CloseButton}" Click="Button_Click_Cancel"/>
         <TextBlock x:Name="Header" Style="{StaticResource HeaderTextBlock}"
             HorizontalAlignment="Left"
             Margin="14,6,0,0"
             TextWrapping="Wrap"
             VerticalAlignment="Top"
-            Width="297"
-            Height="20"><Run Language="ru-ru" Text="Автообновление плагина Мераком"/></TextBlock>
+            Width="419"
+            Height="20"><Run Language="ru-ru" Text="АВТООБНОВЛЕНИЕ ПЛАГИНА "/><Run Text="ANLAX"/></TextBlock>
         <Button x:Name="ButtonLog" Style="{StaticResource ButtonBase}" Content="Лог обновления" HorizontalAlignment="Left" Margin="162,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonLog_Click" />
         <Button x:Name="ButtonRestart" Style="{StaticResource ButtonBase}" Content="Перезапустить" HorizontalAlignment="Left" Margin="304,268,0,0" VerticalAlignment="Top" Height="35" Width="100" Click="ButtonRestart_Click" />
     </Grid>
