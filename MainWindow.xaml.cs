@@ -72,8 +72,6 @@ namespace AnlaxRevitUpdate
             }
         }
         public List<string> DllPaths = new List<string>();
-        Dictionary<string, string> downloadResult = new Dictionary<string, string>();
-
         public MainWindow()
         {
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
@@ -95,48 +93,39 @@ namespace AnlaxRevitUpdate
             {
                 try
                 {
-                    TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax";
+                    TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
                     Show();
-                    MessageBox.Show("sda");
                     // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
                     ProgressBarDownload.Maximum = DllPaths.Count + 1;
                     int progress = 0;
 
-                    foreach (string dll in DllPaths)
+                    Task.Run(() =>
                     {
-                        // Обновляем UI до начала загрузки DLL
-                        string currentDllMessage = $"Загрузка {dll}...";
+                        foreach (string dll in DllPaths)
+                        {
+                            string message = HotReload(dll);
+                            string plugName = GetPluginName(dll);
+                            progress++;
+                            Dispatcher.Invoke(() =>
+                            {
+                                ProgressBarDownload.Value = progress;
+                                TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
+                                TextBlockDownload.Text = $"{progress}/{DllPaths.Count + 1} загружено";
+                            });
+                        }
+                        string messageMain =ReloadMainPlug();
+
+                        // После завершения ставим максимальное значение и сообщаем о завершении
                         Dispatcher.Invoke(() =>
                         {
-                            TextBlockMessage.Text += $"{currentDllMessage}\n";
+                            ProgressBarDownload.Value = ProgressBarDownload.Maximum;
+                            TextBlockDownload.Text = "Обновление завершено!";
+                            TextBlockMessage.Text += $"Загрузка AnlaxBase. {messageMain}\n";
+                            TextBlockMessage.Text += "Все обновления завершены!\n";
                         });
-
-                        // Выполняем обновление плагина
-                        string message = HotReload(dll);
-
-                        // Обновляем прогресс
-                        progress++;
-                        Dispatcher.Invoke(() =>
-                        {
-                            ProgressBarDownload.Value = progress;
-                            TextBlockDownload.Text = $"Обновление: {progress} из {DllPaths.Count + 1}";
-
-                            // Добавляем информацию о результате обновления
-                            TextBlockMessage.Text += $"{message}\n";
-                        });
-                    }
-
-                    // Обновляем основной плагин
-                    ReloadMainPlug();
-
-                    // После завершения ставим максимальное значение и сообщаем о завершении
-                    Dispatcher.Invoke(() =>
-                    {
-                        ProgressBarDownload.Value = ProgressBarDownload.Maximum;
-                        TextBlockDownload.Text = "Обновление завершено!";
-                        TextBlockMessage.Text += "Все обновления завершены!\n";
                     });
+
                 }
                 catch (Exception ex)
                 {
@@ -257,26 +246,21 @@ namespace AnlaxRevitUpdate
             Close();
         }
 
-        private void ButtonLog_Click(object sender, RoutedEventArgs e)
+        private string GetPluginName (string filePath)
         {
-            List<string> wrongFiles = new List<string>();
-            foreach (string keyFile in downloadResult.Keys)
-            {
-                string Value = downloadResult[keyFile];
+                // Получаем путь до файла без последней части
+                string directory = System.IO.Path.GetDirectoryName(filePath);
 
-                if (Value == "Не удалось перезаписать" || Value == "Не удалось перезаписать")
-                {
-                    wrongFiles.Add(Value);
-                }
-            }
-            if (wrongFiles.Count > 0)
-            {
-                MessageBox.Show("Ошибки в файлах:" + string.Join(", ", wrongFiles));
-            }
-            else
-            {
-                MessageBox.Show("Все файлы обновлены без ошибок");
-            }
+                // Разбиваем путь на папки
+                string[] pathParts = directory.Split(System.IO.Path.DirectorySeparatorChar);
+
+                // Получаем имя файла без расширения
+                string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
+
+                // Берем две последние папки и имя файла
+                string result = System.IO.Path.Combine(pathParts[^1], fileNameWithoutExtension);
+
+                return result;
         }
         public List<string> FindDllsWithApplicationStart()
         {
@@ -327,10 +311,10 @@ namespace AnlaxRevitUpdate
         {
             // Создаем новое окно
             MainWindow newWindow = new MainWindow();
-            // Устанавливаем его как главное окно приложения
-            System.Windows.Application.Current.MainWindow = newWindow;
+
             // Показываем новое окно
             newWindow.Show();
+
             // Закрываем текущее окно
             this.Close();
         }
