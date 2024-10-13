@@ -20,7 +20,7 @@
     </Window.Resources>
 
     <Grid>
-        <Button x:Name="ButtonClose" Style="{StaticResource ButtonBase}" Content="Ок" HorizontalAlignment="Left" Margin="390,375,0,0" VerticalAlignment="Top" Height="35" Width="150" Click="ButtonClose_Click"/>
+        <Button x:Name="ButtonClose" Style="{StaticResource ButtonBase}" Content="ОК" HorizontalAlignment="Left" Margin="390,375,0,0" VerticalAlignment="Top" Height="35" Width="150" Click="ButtonClose_Click"/>
         <Button x:Name="ButtonAnik" Style="{StaticResource ButtonBase}" Content="АНЕКДОТ" HorizontalAlignment="Left" Margin="10,375,0,0" VerticalAlignment="Top" Height="35" Width="150" Click="ButtonAnik_Click"/>
         <TextBlock x:Name="TextBlockMessage" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,34,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="525" Height="289" FontSize="12"/>
         <ProgressBar x:Name="ProgressBarDownload" Style="{StaticResource CustomProgressBarStyle}" HorizontalAlignment="Center"  Margin="0,350,0,0" VerticalAlignment="Top" Width="530"/>

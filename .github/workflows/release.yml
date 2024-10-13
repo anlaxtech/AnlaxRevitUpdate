@@ -1,0 +1,56 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config:
+          - name: Release
+            framework: net8.0-windows
+            tag: ReleaseUpdate
+            path: net8.0-windows
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore NuGet dependencies with version
+      run: dotnet restore AnlaxRevitUpdate.sln /p:Configuration="${{ matrix.config.name }}"
+
+    - name: Build the solution
+      run: dotnet build AnlaxRevitUpdate.sln --configuration "${{ matrix.config.name }}"
+
+    - name: Archive build output
+      run: |
+        Compress-Archive -Path "./bin/${{ matrix.config.name }}/${{ matrix.config.path }}/*" -DestinationPath "./bin/${{ matrix.config.name }}/${{ matrix.config.path }}/AnlaxRevitUpdate.zip"
+      shell: pwsh
+
+    - name: Check if tag '${{ matrix.config.tag }}' exists and delete the release
+      run: |
+        if gh release view ${{ matrix.config.tag }}; then
+          gh release delete ${{ matrix.config.tag }} -y
+        fi
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.ANLAXD }}
+
+    - name: Upload archive as release asset
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: '${{ matrix.config.tag }}'
+        name: '${{ matrix.config.name }}'
+        files: ./bin/${{ matrix.config.name }}/${{ matrix.config.path }}/AnlaxRevitUpdate.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.ANLAXD }}
