@@ -93,6 +93,7 @@ namespace AnlaxRevitUpdate
                 try
                 {
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
+                    MessageBox.Show("das");
                     Show();
                     // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
@@ -245,21 +246,21 @@ namespace AnlaxRevitUpdate
             Close();
         }
 
-        private string GetPluginName (string filePath)
+        private string GetPluginName(string filePath)
         {
-                // Получаем путь до файла без последней части
-                string directory = System.IO.Path.GetDirectoryName(filePath);
+            // Получаем путь до файла без последней части
+            string directory = System.IO.Path.GetDirectoryName(filePath);
 
-                // Разбиваем путь на папки
-                string[] pathParts = directory.Split(System.IO.Path.DirectorySeparatorChar);
+            // Разбиваем путь на папки
+            string[] pathParts = directory.Split(System.IO.Path.DirectorySeparatorChar);
 
-                // Получаем имя файла без расширения
-                string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
+            // Получаем имя файла без расширения
+            string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
 
-                // Берем две последние папки и имя файла
-                string result = System.IO.Path.Combine(pathParts[^1], fileNameWithoutExtension);
+            // Берем две последние папки и имя файла
+            string result = System.IO.Path.Combine(pathParts[pathParts.Length - 1], fileNameWithoutExtension);
 
-                return result;
+            return result;
         }
         public List<string> FindDllsWithApplicationStart()
         {
