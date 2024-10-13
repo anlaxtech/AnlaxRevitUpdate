@@ -12,9 +12,29 @@ jobs:
     strategy:
       matrix:
         config:
-          - name: Release
+          - name: Release R20
             framework: net8.0-windows
-            tag: ReleaseUpdate
+            tag: ReleaseR20Last
+            path: net8.0-windows
+          - name: Release R21
+            framework: net8.0-windows
+            tag: ReleaseR21Last
+            path: net8.0-windows
+          - name: Release R22
+            framework: net8.0-windows
+            tag: ReleaseR22Last
+            path: net8.0-windows
+          - name: Release R23
+            framework: net8.0-windows
+            tag: ReleaseR23Last
+            path: net8.0-windows
+          - name: Release R24
+            framework: net8.0-windows
+            tag: ReleaseR24Last
+            path: net8.0-windows
+          - name: Release R25
+            framework: net8.0-windows
+            tag: ReleaseR25Last
             path: net8.0-windows
 
     steps:
