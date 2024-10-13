@@ -76,7 +76,7 @@ namespace AnlaxRevitUpdate
         {
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll";
+            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
             Assembly.LoadFrom(revitApiUiPath);
             InitializeComponent();
             bool runs = IsRevitRunning(RevitVersion);
@@ -163,7 +163,7 @@ namespace AnlaxRevitUpdate
             try
             {
                 // Формируем путь к RevitAPIUI.dll на основе версии Revit
-                string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll";
+                string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
                 Assembly.LoadFrom(revitApiUiPath);
                 byte[] assemblyBytes = File.ReadAllBytes(path);
                 Assembly assembly = Assembly.Load(assemblyBytes);
