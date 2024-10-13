@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using AnlaxPackage;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -93,7 +94,6 @@ namespace AnlaxRevitUpdate
                 {
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
                     Show();
-                    MessageBox.Show("sda");
                     // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
                     ProgressBarDownload.Maximum = DllPaths.Count + 1;
@@ -171,15 +171,13 @@ namespace AnlaxRevitUpdate
                 try
                 {
                     // Попытка получить типы
-                    typeStart = assembly.GetTypes()
-    .Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName)
-    .FirstOrDefault();
+                    typeStart = assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
                 }
                 catch (ReflectionTypeLoadException ex)
                 {
                     // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
                     var loadedTypes = ex.Types.Where(t => t != null);
-                    typeStart = loadedTypes.Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName).FirstOrDefault();
+                    typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
                 }
 
                 if (typeStart != null)
@@ -284,16 +282,13 @@ namespace AnlaxRevitUpdate
                     try
                     {
                         // Попытка получить типы
-                        var types = assembly.GetTypes();
-                        typeStart = assembly.GetTypes()
-.Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName)
-.FirstOrDefault();
+                        typeStart = assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
                     }
                     catch (ReflectionTypeLoadException ex)
                     {
                         // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
                         var loadedTypes = ex.Types.Where(t => t != null);
-                        typeStart = loadedTypes.Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName).FirstOrDefault();
+                        typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
                     }
 
                     if (typeStart != null)
