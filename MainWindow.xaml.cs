@@ -309,14 +309,14 @@ namespace AnlaxRevitUpdate
         }
         private void ButtonRestart_Click(object sender, RoutedEventArgs e)
         {
-            // Создаем новое окно
-            MainWindow newWindow = new MainWindow();
+            // Получаем текущий путь к исполняемому файлу
+            string appPath = Process.GetCurrentProcess().MainModule.FileName;
 
-            // Показываем новое окно
-            newWindow.Show();
+            // Запускаем новый процесс
+            Process.Start(appPath);
 
-            // Закрываем текущее окно
-            this.Close();
+            // Завершаем текущее приложение
+            Application.Current.Shutdown();
         }
     }
 }
