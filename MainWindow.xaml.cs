@@ -1,6 +1,4 @@
-﻿using AnlaxPackage;
-using Autodesk.Revit.UI;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -23,6 +21,7 @@ namespace AnlaxRevitUpdate
     public partial class MainWindow : Window
     {
         string PluginAutoUpdateDirectory { get; set; }
+        static string ClassUpdtareName = "IPluginUpdater";
         string PluginDirectory
         {
             get
@@ -75,9 +74,8 @@ namespace AnlaxRevitUpdate
         public MainWindow()
         {
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
-
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
+            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll";
             Assembly.LoadFrom(revitApiUiPath);
             InitializeComponent();
             bool runs = IsRevitRunning(RevitVersion);
@@ -95,6 +93,7 @@ namespace AnlaxRevitUpdate
                 {
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
                     Show();
+                    MessageBox.Show("sda");
                     // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
                     ProgressBarDownload.Maximum = DllPaths.Count + 1;
@@ -164,7 +163,7 @@ namespace AnlaxRevitUpdate
             try
             {
                 // Формируем путь к RevitAPIUI.dll на основе версии Revit
-                string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
+                string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll";
                 Assembly.LoadFrom(revitApiUiPath);
                 byte[] assemblyBytes = File.ReadAllBytes(path);
                 Assembly assembly = Assembly.Load(assemblyBytes);
@@ -172,13 +171,15 @@ namespace AnlaxRevitUpdate
                 try
                 {
                     // Попытка получить типы
-                    typeStart = assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                    typeStart = assembly.GetTypes()
+    .Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName)
+    .FirstOrDefault();
                 }
                 catch (ReflectionTypeLoadException ex)
                 {
                     // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
                     var loadedTypes = ex.Types.Where(t => t != null);
-                    typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                    typeStart = loadedTypes.Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName).FirstOrDefault();
                 }
 
                 if (typeStart != null)
@@ -284,13 +285,15 @@ namespace AnlaxRevitUpdate
                     {
                         // Попытка получить типы
                         var types = assembly.GetTypes();
-                        typeStart = types.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                        typeStart = assembly.GetTypes()
+.Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName)
+.FirstOrDefault();
                     }
                     catch (ReflectionTypeLoadException ex)
                     {
                         // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
                         var loadedTypes = ex.Types.Where(t => t != null);
-                        typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                        typeStart = loadedTypes.Where(t => t.BaseType != null && t.BaseType.Name == ClassUpdtareName).FirstOrDefault();
                     }
 
                     if (typeStart != null)

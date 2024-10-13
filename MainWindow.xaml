@@ -14,7 +14,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/AnlaxPackage;component/ViewElementsTemplate.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/AnlaxRevitUpdate;component/ViewElementsTemplate.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
