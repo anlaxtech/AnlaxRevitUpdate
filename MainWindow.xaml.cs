@@ -1,4 +1,4 @@
-﻿using AnlaxPackage;
+﻿using Mono.Cecil;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Runtime.Loader;  // Для AssemblyLoadContext
 
 namespace AnlaxRevitUpdate
 {
@@ -74,11 +75,10 @@ namespace AnlaxRevitUpdate
         public List<string> DllPaths = new List<string>();
         public MainWindow()
         {
+
+            InitializeComponent();
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
-            Assembly.LoadFrom(revitApiUiPath);
-            InitializeComponent();
             bool runs = IsRevitRunning(RevitVersion);
 
             if (runs)
@@ -159,56 +159,60 @@ namespace AnlaxRevitUpdate
             string status =gitHubDownloader.HotReloadPlugin(false);
             return status;
         }
-        private string HotReload(string path)
+        public string HotReload(string path)
         {
             try
             {
-                // Формируем путь к RevitAPIUI.dll на основе версии Revit
-                string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
-                Assembly.LoadFrom(revitApiUiPath);
-                byte[] assemblyBytes = File.ReadAllBytes(path);
-                Assembly assembly = Assembly.Load(assemblyBytes);
-                Type typeStart = null;
-                try
+                // Используем Mono.Cecil для анализа сборки
+                var assemblyDefinition = AssemblyDefinition.ReadAssembly(path);
+
+                TypeDefinition typeStart = null;
+                foreach (var type in assemblyDefinition.MainModule.Types)
                 {
-                    // Попытка получить типы
-                    typeStart = assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
-                    var loadedTypes = ex.Types.Where(t => t != null);
-                    typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                    // Проверяем, реализует ли тип интерфейс IPluginUpdater
+                    if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
+                    {
+                        typeStart = type;
+                        break;
+                    }
                 }
 
                 if (typeStart != null)
                 {
-                    object instance = Activator.CreateInstance(typeStart);
-                    MethodInfo onStartupMethod = typeStart.GetMethod("DownloadPluginUpdate");
+                    // Создаем новый домен для загрузки сборки
+                    AppDomain domain = AppDomain.CreateDomain("HotReloadDomain");
 
-                    if (onStartupMethod != null)
-                    {
-                        try
-                        {
-                            // Вызов метода через Invoke с обработкой исключений
-                            string message = (string)onStartupMethod.Invoke(instance, new object[] { path, IsDebug });
-                            return message;
-                        }
-                        catch (TargetInvocationException tie)
-                        {
-                            // Это исключение возникает, если ошибка произошла внутри вызванного метода
-                            return "Ошибка внутри метода DownloadPluginUpdate: " + tie.InnerException?.Message;
-                        }
-                    }
+                    // Создаем прокси-объект в новом домене
+                    var loader = (AssemblyLoader)domain.CreateInstanceFromAndUnwrap(
+                        typeof(AssemblyLoader).Assembly.Location,
+                        typeof(AssemblyLoader).FullName);
+
+                    // Вызов метода DownloadPluginUpdate через прокси в новом домене
+                    string result = loader.LoadAndExecute(
+                        path,                        // Путь к сборке
+                        typeStart.FullName,           // Полное имя типа, реализующего IPluginUpdater
+                        "DownloadPluginUpdate",       // Имя вызываемого метода
+                        new object[] { path, false }  // Аргументы метода (path и IsDebug)
+                    );
+
+                    // Разрушаем домен после завершения работы
+                    AppDomain.Unload(domain);
+
+                    return result;
                 }
-
-                return "Класс с методом DownloadPluginUpdate не найден";
+                else
+                {
+                    return "Класс, реализующий IPluginUpdater, не найден.";
+                }
             }
             catch (Exception ex)
             {
                 return "Общая ошибка: " + ex.Message;
             }
         }
+
+
+
 
 
         public static bool IsRevitRunning(string versionNumber)
@@ -273,23 +277,18 @@ namespace AnlaxRevitUpdate
             {
                 try
                 {
-                    // Читаем DLL как байтовый массив
-                    var assemblyBytes = File.ReadAllBytes(dll);
+                    // Используем Mono.Cecil для анализа сборки
+                    var assemblyDefinition = AssemblyDefinition.ReadAssembly(dll);
 
-                    // Загружаем сборку из байтов
-                    var assembly = Assembly.Load(assemblyBytes);
-
-                    Type typeStart = null;
-                    try
+                    TypeDefinition typeStart = null;
+                    foreach (var type in assemblyDefinition.MainModule.Types)
                     {
-                        // Попытка получить типы
-                        typeStart = assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
-                    }
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        // Обрабатываем ReflectionTypeLoadException и используем загруженные типы
-                        var loadedTypes = ex.Types.Where(t => t != null);
-                        typeStart = loadedTypes.Where(t => t.GetInterfaces().Any(i => i == typeof(IPluginUpdater))).FirstOrDefault();
+                        // Проверяем, реализует ли тип интерфейс IPluginUpdater
+                        if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
+                        {
+                            typeStart = type;
+                            break;
+                        }
                     }
 
                     if (typeStart != null)
