@@ -187,17 +187,17 @@ namespace AnlaxRevitUpdate
                     {
                         if (assemblyName.Name == "RevitAPIUI")
                         {
-                            string revitApiUiPath = @"C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll";
+                            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
                             return context.LoadFromAssemblyPath(revitApiUiPath);
                         }
                         else if (assemblyName.Name == "RevitAPI")
                         {
-                            string revitApiPath = @"C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll";
+                            string revitApiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll";
                             return context.LoadFromAssemblyPath(revitApiPath);
                         }
                         else if (assemblyName.Name == "AnlaxPackage")
                         {
-                            string anlaxPackagePath = @"C:\ProgramData\Autodesk\Revit\Addins\2022\AnlaxDev\AnlaxPackage.dll";
+                            string anlaxPackagePath = $@"{PluginDirectory}\AnlaxPackage.dll";
                             return context.LoadFromAssemblyPath(anlaxPackagePath);
                         }
                         return null; // Возвращаем null для остальных сборок
