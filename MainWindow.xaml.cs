@@ -76,8 +76,8 @@ namespace AnlaxRevitUpdate
 
         private void LoadAddAssembly()
         {
-            Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\RevitAPI.dll");
-            Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\RevitAPIUI.dll");
+            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll");
+            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll");
             Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\AnlaxPackage.dll");
 
         }
