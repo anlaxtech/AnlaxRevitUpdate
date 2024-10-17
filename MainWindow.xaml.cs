@@ -71,8 +71,16 @@ namespace AnlaxRevitUpdate
                 }
                 return false;
             }
-        }
+        } 
         public List<string> DllPaths = new List<string>();
+
+        private void LoadAddAssembly()
+        {
+            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll");
+            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll");
+            Assembly.LoadFrom($@"{PluginDirectory}\AnlaxPackage.dll");
+
+        }
         public MainWindow()
         {
 
@@ -102,6 +110,7 @@ namespace AnlaxRevitUpdate
 
                     Task.Run(() =>
                     {
+                        LoadAddAssembly();
                         foreach (string dll in DllPaths)
                         {
                             string message = HotReload(dll);
@@ -163,48 +172,29 @@ namespace AnlaxRevitUpdate
         {
             try
             {
-                // Используем Mono.Cecil для анализа сборки
-                var assemblyDefinition = AssemblyDefinition.ReadAssembly(path);
-
-                TypeDefinition typeStart = null;
-                foreach (var type in assemblyDefinition.MainModule.Types)
+                string fuulName = string.Empty;
+                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(path))
                 {
-                    // Проверяем, реализует ли тип интерфейс IPluginUpdater
-                    if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
+                    // Используем Mono.Cecil для анализа сборки
+
+                    TypeDefinition typeStart = null;
+                    foreach (var type in assemblyDefinition.MainModule.Types)
                     {
-                        typeStart = type;
-                        break;
+                        // Проверяем, реализует ли тип интерфейс IPluginUpdater
+                        if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
+                        {
+                            typeStart = type;
+                            fuulName = type.FullName;
+                            break;
+                        }
                     }
                 }
-
-                if (typeStart != null)
+                if (!string.IsNullOrEmpty(fuulName))
                 {
-                    // Создаем контекст загрузки сборки
-                    var loadContext = new HotReloadAssemblyLoadContext();
-
-                    // Подписываемся на событие для подгрузки сборок вручную
-                    loadContext.Resolving += (context, assemblyName) =>
-                    {
-                        if (assemblyName.Name == "RevitAPIUI")
-                        {
-                            string revitApiUiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll";
-                            return context.LoadFromAssemblyPath(revitApiUiPath);
-                        }
-                        else if (assemblyName.Name == "RevitAPI")
-                        {
-                            string revitApiPath = $@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll";
-                            return context.LoadFromAssemblyPath(revitApiPath);
-                        }
-                        else if (assemblyName.Name == "AnlaxPackage")
-                        {
-                            string anlaxPackagePath = $@"{PluginDirectory}\AnlaxPackage.dll";
-                            return context.LoadFromAssemblyPath(anlaxPackagePath);
-                        }
-                        return null; // Возвращаем null для остальных сборок
-                    };
 
                     // Загружаем основную сборку
-                    Assembly assembly = loadContext.LoadFromAssemblyPath(path);
+                    var assemblyBytes = File.ReadAllBytes(path);
+                    Assembly assembly = Assembly.Load(assemblyBytes);
 
                     // Попробуем обработать исключение
                     Type[] types;
@@ -225,7 +215,7 @@ namespace AnlaxRevitUpdate
                     }
 
                     // Ищем тип вручную среди уже загруженных типов
-                    var runtimeType = types.FirstOrDefault(t => t.FullName == typeStart.FullName);
+                    var runtimeType = types.FirstOrDefault(t => t.FullName == fuulName);
 
                     if (runtimeType != null)
                     {
@@ -247,7 +237,7 @@ namespace AnlaxRevitUpdate
                     }
                     else
                     {
-                        return $"Тип {typeStart.FullName} не найден в загруженной сборке.";
+                        return $"Тип {fuulName} не найден в загруженной сборке.";
                     }
                 }
                 else
@@ -260,12 +250,6 @@ namespace AnlaxRevitUpdate
                 return "Общая ошибка: " + ex.Message;
             }
         }
-
-
-
-
-
-
         public static bool IsRevitRunning(string versionNumber)
         {
             // Получаем все процессы с именем "Revit" (может потребоваться уточнение в зависимости от версии)
