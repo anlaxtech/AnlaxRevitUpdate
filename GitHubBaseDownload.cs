@@ -146,11 +146,23 @@ namespace AnlaxRevitUpdate
                         // Удаляем файл, если он существует
                         if (File.Exists(destinationPath))
                         {
-                            File.Delete(destinationPath);
-                        }
+                            try
+                            {
+                                File.Delete(destinationPath);
+                            }
+                            catch 
+                            {
 
-                        // Распаковываем файл
-                        entry.ExtractToFile(destinationPath, true);
+                            }
+                            
+                        }
+                        try
+                        {
+                            // Распаковываем файл
+                            entry.ExtractToFile(destinationPath, true);
+                        }
+                        catch { }
+
                     }
                 }
             }

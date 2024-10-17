@@ -76,9 +76,9 @@ namespace AnlaxRevitUpdate
 
         private void LoadAddAssembly()
         {
-            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll");
-            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll");
-            Assembly.LoadFrom($@"{PluginDirectory}\AnlaxPackage.dll");
+            Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\RevitAPI.dll");
+            Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\RevitAPIUI.dll");
+            Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\AnlaxPackage.dll");
 
         }
         public MainWindow()
@@ -310,32 +310,33 @@ namespace AnlaxRevitUpdate
 
             foreach (var dll in dllFiles)
             {
-                try
+                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(dll))
                 {
-                    // Используем Mono.Cecil для анализа сборки
-                    var assemblyDefinition = AssemblyDefinition.ReadAssembly(dll);
-
-                    TypeDefinition typeStart = null;
-                    foreach (var type in assemblyDefinition.MainModule.Types)
+                    try
                     {
-                        // Проверяем, реализует ли тип интерфейс IPluginUpdater
-                        if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
+                        TypeDefinition typeStart = null;
+                        foreach (var type in assemblyDefinition.MainModule.Types)
                         {
-                            typeStart = type;
-                            break;
+                            // Проверяем, реализует ли тип интерфейс IPluginUpdater
+                            if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
+                            {
+                                typeStart = type;
+                                break;
+                            }
+                        }
+
+                        if (typeStart != null)
+                        {
+                            result.Add(dll);
                         }
                     }
-
-                    if (typeStart != null)
+                    catch (Exception ex)
                     {
-                        result.Add(dll);
+                        // Логируем ошибки, если нужно
+                        // Console.WriteLine($"Ошибка при обработке {dll}: {ex.Message}");
                     }
                 }
-                catch (Exception ex)
-                {
-                    // Логируем ошибки, если нужно
-                    // Console.WriteLine($"Ошибка при обработке {dll}: {ex.Message}");
-                }
+
             }
 
             return result;
