@@ -159,7 +159,7 @@ namespace AnlaxRevitUpdate
             string status =gitHubDownloader.HotReloadPlugin(false);
             return status;
         }
-        public string HotReload(string path)
+        private string HotReload(string path)
         {
             try
             {
@@ -179,26 +179,76 @@ namespace AnlaxRevitUpdate
 
                 if (typeStart != null)
                 {
-                    // Создаем новый домен для загрузки сборки
-                    AppDomain domain = AppDomain.CreateDomain("HotReloadDomain");
+                    // Создаем контекст загрузки сборки
+                    var loadContext = new HotReloadAssemblyLoadContext();
 
-                    // Создаем прокси-объект в новом домене
-                    var loader = (AssemblyLoader)domain.CreateInstanceFromAndUnwrap(
-                        typeof(AssemblyLoader).Assembly.Location,
-                        typeof(AssemblyLoader).FullName);
+                    // Подписываемся на событие для подгрузки сборок вручную
+                    loadContext.Resolving += (context, assemblyName) =>
+                    {
+                        if (assemblyName.Name == "RevitAPIUI")
+                        {
+                            string revitApiUiPath = @"C:\Program Files\Autodesk\Revit 2022\RevitAPIUI.dll";
+                            return context.LoadFromAssemblyPath(revitApiUiPath);
+                        }
+                        else if (assemblyName.Name == "RevitAPI")
+                        {
+                            string revitApiPath = @"C:\Program Files\Autodesk\Revit 2022\RevitAPI.dll";
+                            return context.LoadFromAssemblyPath(revitApiPath);
+                        }
+                        else if (assemblyName.Name == "AnlaxPackage")
+                        {
+                            string anlaxPackagePath = @"C:\ProgramData\Autodesk\Revit\Addins\2022\AnlaxDev\AnlaxPackage.dll";
+                            return context.LoadFromAssemblyPath(anlaxPackagePath);
+                        }
+                        return null; // Возвращаем null для остальных сборок
+                    };
 
-                    // Вызов метода DownloadPluginUpdate через прокси в новом домене
-                    string result = loader.LoadAndExecute(
-                        path,                        // Путь к сборке
-                        typeStart.FullName,           // Полное имя типа, реализующего IPluginUpdater
-                        "DownloadPluginUpdate",       // Имя вызываемого метода
-                        new object[] { path, false }  // Аргументы метода (path и IsDebug)
-                    );
+                    // Загружаем основную сборку
+                    Assembly assembly = loadContext.LoadFromAssemblyPath(path);
 
-                    // Разрушаем домен после завершения работы
-                    AppDomain.Unload(domain);
+                    // Попробуем обработать исключение
+                    Type[] types;
+                    try
+                    {
+                        types = assembly.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException ex)
+                    {
+                        // Логируем исключения загрузки типов
+                        foreach (var loaderException in ex.LoaderExceptions)
+                        {
+                            Console.WriteLine($"Ошибка загрузки типа: {loaderException.Message}");
+                        }
 
-                    return result;
+                        // Получаем уже загруженные типы
+                        types = ex.Types.Where(t => t != null).ToArray();
+                    }
+
+                    // Ищем тип вручную среди уже загруженных типов
+                    var runtimeType = types.FirstOrDefault(t => t.FullName == typeStart.FullName);
+
+                    if (runtimeType != null)
+                    {
+                        // Ищем метод "DownloadPluginUpdate"
+                        var onStartupMethod = runtimeType.GetMethod("DownloadPluginUpdate");
+
+                        if (onStartupMethod != null)
+                        {
+                            object instance = Activator.CreateInstance(runtimeType);
+
+                            // Вызов метода через рефлексию
+                            string message = (string)onStartupMethod.Invoke(instance, new object[] { path, IsDebug });
+                            return message;
+                        }
+                        else
+                        {
+                            return "Метод DownloadPluginUpdate не найден.";
+                        }
+                    }
+                    else
+                    {
+                        return $"Тип {typeStart.FullName} не найден в загруженной сборке.";
+                    }
                 }
                 else
                 {
@@ -210,6 +260,7 @@ namespace AnlaxRevitUpdate
                 return "Общая ошибка: " + ex.Message;
             }
         }
+
 
 
 
