@@ -76,11 +76,94 @@ namespace AnlaxRevitUpdate
 
         private void LoadAddAssembly()
         {
-            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll");
-            Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll");
+            if (File.Exists($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll"))
+            {
+                Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll");
+            }
+            else
+            {
+                string pathToRevit = $@"{PluginDirectory}\AutoUpdate\PathToRevitFolder.txt";
+                LoadRevitAssembly(pathToRevit, "RevitAPI.dll");
+            }
+
+            if (File.Exists($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll"))
+            {
+                Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll");
+            }
+            else
+            {
+                string pathToRevit = $@"{PluginDirectory}\AutoUpdate\PathToRevitFolder.txt";
+                LoadRevitAssembly(pathToRevit, "RevitAPIU.dll");
+            }
+
             Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\AnlaxPackage.dll");
 
         }
+
+        private string SelectPath()
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog();
+            dialog.Title = "Выбериет папку"; // instead of default "Save As"
+            dialog.Filter = "Directory|*.this.directory"; // Prevents displaying files
+            dialog.FileName = "select"; // Filename will then be "select.this.directory"
+            if (dialog.ShowDialog() == true)
+            {
+                string path = dialog.FileName;
+                // Remove fake filename from resulting path
+                path = path.Replace("\\select.this.directory", "");
+                path = path.Replace(".this.directory", "");
+                // If user has changed the filename, create the new directory
+                if (!System.IO.Directory.Exists(path))
+                {
+                    System.IO.Directory.CreateDirectory(path);
+                }
+                // Our final value is in path
+                return path;
+            }
+            return string.Empty;
+        }
+
+        public void LoadRevitAssembly(string pathToRevit, string nameDll)
+        {
+            try
+            {
+                // Чтение пути из текстового файла
+                string folderPath = File.ReadAllText(pathToRevit).Trim();
+                string dllPath = System.IO.Path.Combine(folderPath, nameDll);
+
+                // Проверка существования файла
+                if (File.Exists(dllPath))
+                {
+                    // Подгружаем DLL
+                    Assembly.LoadFrom(dllPath);
+                }
+                else
+                {
+                    // Вызов метода выбора пути
+                    string newFolderPath = SelectPath();
+                    string newDllPath = System.IO.Path.Combine(newFolderPath, nameDll);
+
+                    if (File.Exists(newDllPath))
+                    {
+                        // Подгружаем DLL и сохраняем новый путь в файл
+                        Assembly.LoadFrom(newDllPath);
+
+                        // Сохранение нового пути в текстовый файл
+                        File.WriteAllText(pathToRevit, newFolderPath);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Указан не верный путь к папке Revit.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Произошла ошибка: {ex.Message}");
+            }
+        }
+
+
         public MainWindow()
         {
 
