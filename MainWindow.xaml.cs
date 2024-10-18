@@ -61,6 +61,7 @@ namespace AnlaxRevitUpdate
                 return revitVersion;
             }
         }
+        public bool GoodDownload {  get; set; }
         public bool IsDebug
         {
             get
@@ -166,7 +167,7 @@ namespace AnlaxRevitUpdate
 
         public MainWindow()
         {
-
+            GoodDownload = true;
             InitializeComponent();
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
@@ -205,6 +206,10 @@ namespace AnlaxRevitUpdate
                                 TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
                                 TextBlockDownload.Text = $"{progress}/{DllPaths.Count + 1} загружено";
                             });
+                            if (message != "Загрузка прошла успешно" || message != "Загружена актуальная версия плагина")
+                            {
+                                GoodDownload = false;
+                            }
                         }
                         string messageMain =ReloadMainPlug();
 
@@ -217,6 +222,10 @@ namespace AnlaxRevitUpdate
                             TextBlockMessage.Text += "Все обновления завершены!\n";
                         });
                     });
+                    if (GoodDownload)
+                    {
+                        Timer timer = new Timer(CloseWindowCallback, null, 5000, Timeout.Infinite);
+                    }
 
                 }
                 catch (Exception ex)
@@ -248,7 +257,11 @@ namespace AnlaxRevitUpdate
             var directoryInfo = new System.IO.DirectoryInfo(PluginDirectory);
             string plugFolderName = directoryInfo.Parent.Name;
             GitHubBaseDownload gitHubDownloader = new GitHubBaseDownload(pathToBaseDll, IsDebug, token, userName, repposotoryName, "AnlaxBase");
-            string status =gitHubDownloader.HotReloadPlugin(false);
+            string status =gitHubDownloader.HotReloadPlugin(true);
+            if (status != "Загрузка прошла успешно" || status != "Загружена актуальная версия плагина")
+            {
+                GoodDownload = false;
+            }
             return status;
         }
         private string HotReload(string path)
