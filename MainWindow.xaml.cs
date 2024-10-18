@@ -185,7 +185,6 @@ namespace AnlaxRevitUpdate
                 try
                 {
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
-                    MessageBox.Show("das");
                     Show();
                     // Устанавливаем максимальное значение прогрессбара
                     DllPaths = FindDllsWithApplicationStart();
@@ -206,7 +205,7 @@ namespace AnlaxRevitUpdate
                                 TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
                                 TextBlockDownload.Text = $"{progress}/{DllPaths.Count + 1} загружено";
                             });
-                            if (message != "Загрузка прошла успешно" || message != "Загружена актуальная версия плагина")
+                            if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
                             {
                                 GoodDownload = false;
                             }
@@ -221,11 +220,12 @@ namespace AnlaxRevitUpdate
                             TextBlockMessage.Text += $"Загрузка AnlaxBase. {messageMain}\n";
                             TextBlockMessage.Text += "Все обновления завершены!\n";
                         });
+                        if (GoodDownload)
+                        {
+                            Timer timer = new Timer(CloseWindowCallback, null, 5000, Timeout.Infinite);
+                        }
+
                     });
-                    if (GoodDownload)
-                    {
-                        Timer timer = new Timer(CloseWindowCallback, null, 5000, Timeout.Infinite);
-                    }
 
                 }
                 catch (Exception ex)
@@ -258,7 +258,7 @@ namespace AnlaxRevitUpdate
             string plugFolderName = directoryInfo.Parent.Name;
             GitHubBaseDownload gitHubDownloader = new GitHubBaseDownload(pathToBaseDll, IsDebug, token, userName, repposotoryName, "AnlaxBase");
             string status =gitHubDownloader.HotReloadPlugin(true);
-            if (status != "Загрузка прошла успешно" || status != "Загружена актуальная версия плагина")
+            if (status != "Загрузка прошла успешно" && status != "Загружена актуальная версия плагина")
             {
                 GoodDownload = false;
             }
