@@ -29,4 +29,7 @@
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="AddFiles\" />
+  </ItemGroup>
 </Project>
