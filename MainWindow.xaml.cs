@@ -23,7 +23,6 @@ namespace AnlaxRevitUpdate
     public partial class MainWindow : Window
     {
         string PluginAutoUpdateDirectory { get; set; }
-        static string ClassUpdtareName = "IPluginUpdater";
         string PluginDirectory
         {
             get
@@ -73,96 +72,6 @@ namespace AnlaxRevitUpdate
                 return false;
             }
         } 
-        public List<string> DllPaths = new List<string>();
-
-        private void LoadAddAssembly()
-        {
-            if (File.Exists($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll"))
-            {
-                Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPI.dll");
-            }
-            else
-            {
-                string pathToRevit = $@"{PluginDirectory}\AutoUpdate\PathToRevitFolder.txt";
-                LoadRevitAssembly(pathToRevit, "RevitAPI.dll");
-            }
-
-            if (File.Exists($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll"))
-            {
-                Assembly.LoadFrom($@"C:\Program Files\Autodesk\Revit {RevitVersion}\RevitAPIUI.dll");
-            }
-            else
-            {
-                string pathToRevit = $@"{PluginDirectory}\AutoUpdate\PathToRevitFolder.txt";
-                LoadRevitAssembly(pathToRevit, "RevitAPIU.dll");
-            }
-
-            Assembly.LoadFrom($@"{PluginDirectory}\AutoUpdate\AnlaxPackage.dll");
-
-        }
-
-        private string SelectPath()
-        {
-            var dialog = new Microsoft.Win32.SaveFileDialog();
-            dialog.Title = "Выбериет папку"; // instead of default "Save As"
-            dialog.Filter = "Directory|*.this.directory"; // Prevents displaying files
-            dialog.FileName = "select"; // Filename will then be "select.this.directory"
-            if (dialog.ShowDialog() == true)
-            {
-                string path = dialog.FileName;
-                // Remove fake filename from resulting path
-                path = path.Replace("\\select.this.directory", "");
-                path = path.Replace(".this.directory", "");
-                // If user has changed the filename, create the new directory
-                if (!System.IO.Directory.Exists(path))
-                {
-                    System.IO.Directory.CreateDirectory(path);
-                }
-                // Our final value is in path
-                return path;
-            }
-            return string.Empty;
-        }
-
-        public void LoadRevitAssembly(string pathToRevit, string nameDll)
-        {
-            try
-            {
-                // Чтение пути из текстового файла
-                string folderPath = File.ReadAllText(pathToRevit).Trim();
-                string dllPath = System.IO.Path.Combine(folderPath, nameDll);
-
-                // Проверка существования файла
-                if (File.Exists(dllPath))
-                {
-                    // Подгружаем DLL
-                    Assembly.LoadFrom(dllPath);
-                }
-                else
-                {
-                    // Вызов метода выбора пути
-                    string newFolderPath = SelectPath();
-                    string newDllPath = System.IO.Path.Combine(newFolderPath, nameDll);
-
-                    if (File.Exists(newDllPath))
-                    {
-                        // Подгружаем DLL и сохраняем новый путь в файл
-                        Assembly.LoadFrom(newDllPath);
-
-                        // Сохранение нового пути в текстовый файл
-                        File.WriteAllText(pathToRevit, newFolderPath);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Указан не верный путь к папке Revit.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Произошла ошибка: {ex.Message}");
-            }
-        }
 
 
         public MainWindow()
@@ -187,29 +96,8 @@ namespace AnlaxRevitUpdate
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
                     Show();
                     // Устанавливаем максимальное значение прогрессбара
-                    DllPaths = FindDllsWithApplicationStart();
-                    ProgressBarDownload.Maximum = DllPaths.Count + 1;
-                    int progress = 0;
-
                     Task.Run(() =>
                     {
-                        LoadAddAssembly();
-                        foreach (string dll in DllPaths)
-                        {
-                            string message = HotReload(dll);
-                            string plugName = GetPluginName(dll);
-                            progress++;
-                            Dispatcher.Invoke(() =>
-                            {
-                                ProgressBarDownload.Value = progress;
-                                TextBlockMessage.Text += $"Загрузка {plugName}. {message}\n";
-                                TextBlockDownload.Text = $"{progress}/{DllPaths.Count + 1} загружено";
-                            });
-                            if (message != "Загрузка прошла успешно" && message != "Загружена актуальная версия плагина")
-                            {
-                                GoodDownload = false;
-                            }
-                        }
                         string messageMain =ReloadMainPlug();
 
                         // После завершения ставим максимальное значение и сообщаем о завершении
@@ -222,7 +110,7 @@ namespace AnlaxRevitUpdate
                         });
                         if (GoodDownload)
                         {
-                            Timer timer = new Timer(CloseWindowCallback, null, 5000, Timeout.Infinite);
+                            Timer timer = new Timer(CloseWindowCallback, null, 2000, Timeout.Infinite);
                         }
 
                     });
@@ -264,88 +152,7 @@ namespace AnlaxRevitUpdate
             }
             return status;
         }
-        private string HotReload(string path)
-        {
-            try
-            {
-                string fuulName = string.Empty;
-                using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(path))
-                {
-                    // Используем Mono.Cecil для анализа сборки
 
-                    TypeDefinition typeStart = null;
-                    foreach (var type in assemblyDefinition.MainModule.Types)
-                    {
-                        // Проверяем, реализует ли тип интерфейс IPluginUpdater
-                        if (type.Interfaces.Any(i => i.InterfaceType.Name == "IPluginUpdater"))
-                        {
-                            typeStart = type;
-                            fuulName = type.FullName;
-                            break;
-                        }
-                    }
-                }
-                if (!string.IsNullOrEmpty(fuulName))
-                {
-
-                    // Загружаем основную сборку
-                    var assemblyBytes = File.ReadAllBytes(path);
-                    Assembly assembly = Assembly.Load(assemblyBytes);
-
-                    // Попробуем обработать исключение
-                    Type[] types;
-                    try
-                    {
-                        types = assembly.GetTypes();
-                    }
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        // Логируем исключения загрузки типов
-                        foreach (var loaderException in ex.LoaderExceptions)
-                        {
-                            Console.WriteLine($"Ошибка загрузки типа: {loaderException.Message}");
-                        }
-
-                        // Получаем уже загруженные типы
-                        types = ex.Types.Where(t => t != null).ToArray();
-                    }
-
-                    // Ищем тип вручную среди уже загруженных типов
-                    var runtimeType = types.FirstOrDefault(t => t.FullName == fuulName);
-
-                    if (runtimeType != null)
-                    {
-                        // Ищем метод "DownloadPluginUpdate"
-                        var onStartupMethod = runtimeType.GetMethod("DownloadPluginUpdate");
-
-                        if (onStartupMethod != null)
-                        {
-                            object instance = Activator.CreateInstance(runtimeType);
-
-                            // Вызов метода через рефлексию
-                            string message = (string)onStartupMethod.Invoke(instance, new object[] { path, IsDebug });
-                            return message;
-                        }
-                        else
-                        {
-                            return "Метод DownloadPluginUpdate не найден.";
-                        }
-                    }
-                    else
-                    {
-                        return $"Тип {fuulName} не найден в загруженной сборке.";
-                    }
-                }
-                else
-                {
-                    return "Класс, реализующий IPluginUpdater, не найден.";
-                }
-            }
-            catch (Exception ex)
-            {
-                return "Общая ошибка: " + ex.Message;
-            }
-        }
         public static bool IsRevitRunning(string versionNumber)
         {
             // Получаем все процессы с именем "Revit" (может потребоваться уточнение в зависимости от версии)
@@ -381,22 +188,6 @@ namespace AnlaxRevitUpdate
             Close();
         }
 
-        private string GetPluginName(string filePath)
-        {
-            // Получаем путь до файла без последней части
-            string directory = System.IO.Path.GetDirectoryName(filePath);
-
-            // Разбиваем путь на папки
-            string[] pathParts = directory.Split(System.IO.Path.DirectorySeparatorChar);
-
-            // Получаем имя файла без расширения
-            string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
-
-            // Берем две последние папки и имя файла
-            string result = System.IO.Path.Combine(pathParts[pathParts.Length - 1], fileNameWithoutExtension);
-
-            return result;
-        }
         public List<string> FindDllsWithApplicationStart()
         {
             List<string> result = new List<string>();
