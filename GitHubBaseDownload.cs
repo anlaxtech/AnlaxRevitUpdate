@@ -15,11 +15,10 @@ namespace AnlaxRevitUpdate
     {
         private readonly HttpClient _client;
 
-        public GitHubBaseDownload(string assemlyPath, bool debug, string token, string ownerName, string repposotoryName, string folderName1)
+        public GitHubBaseDownload(string assemlyPath, bool debug, string ownerName, string repposotoryName, string folderName1)
         {
             AssemlyPath = assemlyPath;
             Debug = debug;
-            Token = token;
             OwnerName = ownerName;
             RepposotoryName = repposotoryName;
             FolderName = folderName1;
@@ -32,187 +31,86 @@ namespace AnlaxRevitUpdate
 
         public string AssemlyPath { get; }
         public bool Debug { get; }
-        public string Token { get; }
         public string OwnerName { get; }
         public string RepposotoryName { get; }
         public string FolderName { get; }
 
-        public DateTime DateUpdateLocalFile
-        {
-            get
-            {
-                if (!File.Exists(AssemlyPath))
-                {
-                    return DateTime.MinValue;
-                }
+        public DateTime DateUpdateLocalFile => File.Exists(AssemlyPath) ? File.GetLastWriteTime(AssemlyPath) : DateTime.MinValue;
 
-                return File.GetLastWriteTime(AssemlyPath);
-            }
-        }
-        public string RevitVersion
-        {
-            get
-            {
-                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(AssemlyPath).FullName);
-                return directory.Name.Substring(RevitVersion.Length - 2); // Здесь мы получаем "22" и т.д.
-            }
-        }
-        public string ReleaseTag
-        {
-            get
-            {
-                string releaseTag = "Release";
-                if (Debug)
-                {
-                    releaseTag = "Debug";
-                }
-                return releaseTag;
-            }
-        }
-        public DateTime DateRelease
-        {
-            get
-            {
-                if (Release != null)
-                {
-                    return Release.PublishedAt?.DateTime ?? DateTime.MinValue;
-                }
-                return DateTime.MinValue;
-            }
-        }
+        public string RevitVersion => Directory.GetParent(Directory.GetParent(AssemlyPath).FullName).Name.Substring(RevitVersion.Length - 2);
+
+        public string ReleaseTag => Debug ? "Debug" : "Release";
+
+        public DateTime DateRelease => Release?.PublishedAt?.DateTime ?? DateTime.MinValue;
 
         public Release Release
         {
             get
             {
-                // Получаем информацию о релизе с помощью Octokit
                 var client = new GitHubClient(new Octokit.ProductHeaderValue(RepposotoryName + "-Updater"));
-                client.Credentials = new Credentials(Token);
-
                 var releases = client.Repository.Release.GetAll(OwnerName, RepposotoryName).Result;
-
-                var release = releases.FirstOrDefault(r => r.Name == ReleaseTag);
-
-                return release;
+                return releases.FirstOrDefault(r => r.Name == ReleaseTag);
             }
         }
-        public ReleaseAsset ReleaseAsset
-        {
-            get
-            {
 
-                return Release.Assets.FirstOrDefault(a => a.Name.Contains("R" + RevitVersion));
-            }
-        }
-        public string TempPathToDownload
-        {
-            get
-            {
-                return Path.Combine(Path.GetTempPath(), FolderName + ".zip");
-            }
-        }
+        public ReleaseAsset ReleaseAsset => Release?.Assets.FirstOrDefault(a => a.Name.Contains("R" + RevitVersion));
+
+        public string TempPathToDownload => Path.Combine(Path.GetTempPath(), FolderName + ".zip");
+
         private void DeleteOldAndUpdate(bool deleteAllFiles = false)
         {
             string extractPath = Path.GetDirectoryName(AssemlyPath);
 
-            // Удаляем старые файлы, если указано
             if (deleteAllFiles)
             {
-                DirectoryInfo di = new DirectoryInfo(extractPath);
-                foreach (FileInfo file in di.GetFiles())
-                {
-                    file.Delete();
-                }
-                foreach (DirectoryInfo dir in di.GetDirectories())
-                {
-                    dir.Delete(true);
-                }
+                var di = new DirectoryInfo(extractPath);
+                foreach (var file in di.GetFiles()) file.Delete();
+                foreach (var dir in di.GetDirectories()) dir.Delete(true);
             }
 
-            // Распаковываем с перезаписью существующих файлов
             using (ZipArchive archive = ZipFile.OpenRead(TempPathToDownload))
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
                     string destinationPath = Path.Combine(extractPath, entry.FullName);
 
-                    // Создаем директории, если их нет
                     if (string.IsNullOrEmpty(entry.Name))
-                    {
                         Directory.CreateDirectory(destinationPath);
-                    }
                     else
                     {
-                        // Удаляем файл, если он существует
-                        if (File.Exists(destinationPath))
-                        {
-                            try
-                            {
-                                File.Delete(destinationPath);
-                            }
-                            catch 
-                            {
-
-                            }
-                            
-                        }
-                        try
-                        {
-                            // Распаковываем файл
-                            entry.ExtractToFile(destinationPath, true);
-                        }
-                        catch { }
-
+                        if (File.Exists(destinationPath)) File.Delete(destinationPath);
+                        entry.ExtractToFile(destinationPath, true);
                     }
                 }
             }
-            // Удаляем временный файл архива
+
             File.Delete(TempPathToDownload);
         }
+
         public string HotReloadPlugin(bool checkDate)
         {
             string result = string.Empty;
-            if (checkDate)
+            if (checkDate && DateRelease > DateUpdateLocalFile)
             {
-                if (DateRelease > DateUpdateLocalFile)
-                {
-                    result = DownloadReleaseAsset();
-                    if (result == "Загрузка прошла успешно")
-                    {
-                        DeleteOldAndUpdate();
-                    }
-                    else
-                    {
-                        return result;
-                    }
-                }
-                else
-                {
-                    return "Загружена актуальная версия плагина";
-                }
+                result = DownloadReleaseAsset();
+                if (result == "Загрузка прошла успешно") DeleteOldAndUpdate();
+                else return result;
             }
+            else return "Загружена актуальная версия плагина";
+
             result = DownloadReleaseAsset();
-            if (result == "Загрузка прошла успешно")
-            {
-                DeleteOldAndUpdate();
-            }
+            if (result == "Загрузка прошла успешно") DeleteOldAndUpdate();
             return result;
         }
+
         public string DownloadReleaseAsset()
         {
             try
             {
-                // Добавляем токен авторизации
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", Token);
-
-                // Важно: Устанавливаем Accept для работы с API GitHub
                 _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
-
-                // Выполняем запрос синхронно
                 var response = _client.GetAsync(ReleaseAsset.Url).Result;
                 response.EnsureSuccessStatusCode();
 
-                // Записываем данные в файл
                 using (var stream = response.Content.ReadAsStreamAsync().Result)
                 using (var fileStream = new FileStream(TempPathToDownload, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
                 {
@@ -222,15 +120,15 @@ namespace AnlaxRevitUpdate
             }
             catch (HttpRequestException ex)
             {
-                return ($"Ошибка HTTP-запроса: {ex.Message}");
+                return $"Ошибка HTTP-запроса: {ex.Message}";
             }
             catch (TaskCanceledException)
             {
-                return ("Загрузка прервана из-за превышения времени ожидания.");
+                return "Загрузка прервана из-за превышения времени ожидания.";
             }
             catch (Exception ex)
             {
-                return ($"Ошибка: {ex.Message}");
+                return $"Ошибка: {ex.Message}";
             }
         }
     }

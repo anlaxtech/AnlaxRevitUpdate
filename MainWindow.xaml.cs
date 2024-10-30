@@ -139,12 +139,10 @@ namespace AnlaxRevitUpdate
         private string ReloadMainPlug()
         {
             string pathToBaseDll = System.IO.Path.Combine(PluginDirectory, "AnlaxBase.dll");
-            string token = "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";
             string userName = "anlaxtech";
             string repposotoryName = "AnlaxBase";
             var directoryInfo = new System.IO.DirectoryInfo(PluginDirectory);
-            string plugFolderName = directoryInfo.Parent.Name;
-            GitHubBaseDownload gitHubDownloader = new GitHubBaseDownload(pathToBaseDll, IsDebug, token, userName, repposotoryName, "AnlaxBase");
+            GitHubBaseDownload gitHubDownloader = new GitHubBaseDownload(pathToBaseDll, IsDebug,  userName, repposotoryName, "AnlaxBase");
             string status =gitHubDownloader.HotReloadPlugin(true);
             if (status != "Загрузка прошла успешно" && status != "Загружена актуальная версия плагина")
             {
