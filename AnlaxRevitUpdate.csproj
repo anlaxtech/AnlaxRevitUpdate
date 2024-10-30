@@ -6,11 +6,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <Configurations>Debug;Release</Configurations>
-  </PropertyGroup> 
-  <ItemGroup>
-    <None Include=".github\workflows\debug.yml" />
-    <None Include=".github\workflows\release.yml" />
-  </ItemGroup>
+  </PropertyGroup>
   <Target Name="CopyAddFilesToBuildDirectory" AfterTargets="Build">
     <Message Text="Копирование папки AddFiles и ее содержимого в $(TargetDir)" Importance="high" />
 
@@ -23,13 +19,16 @@
     <Copy SourceFiles="@(AddFiles)" DestinationFiles="@(AddFiles->'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
   <ItemGroup>
+    <Compile Remove="AddFiles\**" />
+    <EmbeddedResource Remove="AddFiles\**" />
+    <None Remove="AddFiles\**" />
+    <Page Remove="AddFiles\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="Octokit" Version="13.0.1" />
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="AddFiles\" />
   </ItemGroup>
 </Project>
