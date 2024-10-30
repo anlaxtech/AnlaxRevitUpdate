@@ -54,17 +54,17 @@ namespace AnlaxRevitUpdate
             get
             {
                 DirectoryInfo directory = Directory.GetParent(Directory.GetParent(AssemlyPath).FullName);
-                return directory.Name; // Здесь мы получаем "2022" и т.д.
+                return directory.Name.Substring(RevitVersion.Length - 2); // Здесь мы получаем "22" и т.д.
             }
         }
         public string ReleaseTag
         {
             get
             {
-                string releaseTag = $"Release R{RevitVersion.Substring(RevitVersion.Length - 2)}";
+                string releaseTag = "Release";
                 if (Debug)
                 {
-                    releaseTag = $"Debug R{RevitVersion.Substring(RevitVersion.Length - 2)}";
+                    releaseTag = "Debug";
                 }
                 return releaseTag;
             }
@@ -101,7 +101,7 @@ namespace AnlaxRevitUpdate
             get
             {
 
-                return Release.Assets.FirstOrDefault(a => a.Name == FolderName + ".zip");
+                return Release.Assets.FirstOrDefault(a => a.Name.Contains("R" + RevitVersion));
             }
         }
         public string TempPathToDownload
