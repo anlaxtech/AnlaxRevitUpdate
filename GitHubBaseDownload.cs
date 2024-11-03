@@ -8,6 +8,8 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Windows;
 
 namespace AnlaxRevitUpdate
 {
@@ -27,6 +29,51 @@ namespace AnlaxRevitUpdate
                 Timeout = TimeSpan.FromSeconds(30) // Таймаут 30 секунд
             };
             _client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("AppName", "1.0"));
+        }
+        public string CurrentVersion
+        {
+            get
+            {
+                if (!File.Exists(AssemlyPath))
+                    return "1.0.0";
+
+                var versionInfo = FileVersionInfo.GetVersionInfo(AssemlyPath);
+                string version = versionInfo.FileVersion;
+
+                // Преобразуем версию в формат 2022.1.1.2
+                string formattedVersion = $"{versionInfo.ProductMajorPart}.{versionInfo.ProductMinorPart}.{versionInfo.ProductBuildPart}.{versionInfo.ProductPrivatePart}";
+
+                // Убираем первые четыре знака и точку
+                string result = formattedVersion.Substring(5);
+                return result;
+            }
+        }
+
+        public string ReleaseVersion
+        {
+            get
+            {
+                if (Release != null && !string.IsNullOrEmpty(Release.TagName))
+                {
+                    string tagRelease = Release.TagName;
+                    // Убираем слова "Release" и "Debug" из TagName
+                    string cleanTag = tagRelease.Replace("Debug", "").Replace("Release", "").Trim();
+                    // Возвращаем очищенный TagName
+                    return cleanTag;
+                }
+                return "1.0.0";
+            }
+        }
+        public bool IsReleaseVersionGreater()
+        {
+            // Пробуем создать объекты Version из строк версий
+            if (Version.TryParse(CurrentVersion, out var currentVersion) &&
+                Version.TryParse(ReleaseVersion, out var releaseVersion))
+            {
+                // Сравниваем версии: возвращает true, если ReleaseVersion > CurrentVersion
+                return releaseVersion > currentVersion;
+            }
+            return false;
         }
 
         public string AssemlyPath { get; }
@@ -90,7 +137,7 @@ namespace AnlaxRevitUpdate
         public string HotReloadPlugin(bool checkDate)
         {
             string result = string.Empty;
-            if (checkDate && DateRelease > DateUpdateLocalFile)
+            if (checkDate && IsReleaseVersionGreater())
             {
                 result = DownloadReleaseAsset();
                 if (result == "Загрузка прошла успешно") DeleteOldAndUpdate();
