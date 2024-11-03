@@ -78,6 +78,7 @@ namespace AnlaxRevitUpdate
         {
             GoodDownload = true;
             InitializeComponent();
+            
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             bool runs = IsRevitRunning(RevitVersion);
@@ -93,6 +94,7 @@ namespace AnlaxRevitUpdate
             {
                 try
                 {
+                    ClearLogFile();
                     TextBlockMessage.Text = "Не закрывайте окно. Идет проверка обновления плагина Anlax\n";
                     Show();
                     // Устанавливаем максимальное значение прогрессбара
@@ -236,6 +238,29 @@ namespace AnlaxRevitUpdate
 
             // Завершаем текущее приложение
             Application.Current.Shutdown();
+        }
+        public void ClearLogFile()
+        {
+            var path = System.IO.Path.Combine(PluginDirectory, "AnlaxPackageLog.txt");
+
+            try
+            {
+                // Проверяем, доступен ли файл для записи
+                using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.None))
+                {
+                    fileStream.SetLength(0); // Очищаем файл, устанавливая его длину в 0
+                }
+            }
+            catch (IOException ex)
+            {
+                // Если файл занят другим процессом, регистрируем предупреждение
+
+            }
+            catch (Exception ex)
+            {
+                // Логируем любые другие исключения
+
+            }
         }
     }
 }

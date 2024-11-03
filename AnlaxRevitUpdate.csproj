@@ -6,18 +6,9 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <Configurations>Debug;Release</Configurations>
+    <AssemblyFileVersion>1.1.2</AssemblyFileVersion>
+    <Version>1.1.2</Version>
   </PropertyGroup>
-  <Target Name="CopyAddFilesToBuildDirectory" AfterTargets="Build">
-    <Message Text="Копирование папки AddFiles и ее содержимого в $(TargetDir)" Importance="high" />
-
-    <!-- Выбираем все файлы и папки внутри IncludeDll -->
-    <ItemGroup>
-      <AddFiles Include="$(MSBuildProjectDirectory)\AddFiles\**\*.*" />
-    </ItemGroup>
-
-    <!-- Копируем папку IncludeDll с сохранением структуры -->
-    <Copy SourceFiles="@(AddFiles)" DestinationFiles="@(AddFiles->'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-  </Target>
   <ItemGroup>
     <Compile Remove="AddFiles\**" />
     <EmbeddedResource Remove="AddFiles\**" />
