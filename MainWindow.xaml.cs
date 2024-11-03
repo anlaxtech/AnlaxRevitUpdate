@@ -22,6 +22,9 @@ namespace AnlaxRevitUpdate
     /// </summary>
     public partial class MainWindow : Window
     {
+        public string AssemblyFileVersion => FileVersionInfo
+    .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+    .FileVersion;
         string PluginAutoUpdateDirectory { get; set; }
         string PluginDirectory
         {
@@ -78,7 +81,7 @@ namespace AnlaxRevitUpdate
         {
             GoodDownload = true;
             InitializeComponent();
-            
+            VersionBlock.Text = AssemblyFileVersion;
             // Формируем путь к RevitAPIUI.dll на основе версии Revit
             PluginAutoUpdateDirectory = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             bool runs = IsRevitRunning(RevitVersion);
@@ -138,6 +141,7 @@ namespace AnlaxRevitUpdate
                 Close();
             });
         }
+
         private string ReloadMainPlug()
         {
             string pathToBaseDll = System.IO.Path.Combine(PluginDirectory, "AnlaxBase.dll");

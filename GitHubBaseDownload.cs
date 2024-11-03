@@ -24,6 +24,16 @@ namespace AnlaxRevitUpdate
             OwnerName = ownerName;
             RepposotoryName = repposotoryName;
             FolderName = folderName1;
+            DirectoryInfo parentDirectory = Directory.GetParent(AssemlyPath).Parent;
+            if (parentDirectory != null)
+            {
+                // Получаем имя каталога (например, "2022") и оставляем последние два символа
+                string lastTwoChars = parentDirectory.Name.Length >= 2
+                    ? parentDirectory.Name.Substring(parentDirectory.Name.Length - 2)
+                    : parentDirectory.Name;
+                RevitVersion = lastTwoChars;
+
+            }
             _client = new HttpClient
             {
                 Timeout = TimeSpan.FromSeconds(30) // Таймаут 30 секунд
@@ -84,7 +94,7 @@ namespace AnlaxRevitUpdate
 
         public DateTime DateUpdateLocalFile => File.Exists(AssemlyPath) ? File.GetLastWriteTime(AssemlyPath) : DateTime.MinValue;
 
-        public string RevitVersion => Directory.GetParent(Directory.GetParent(AssemlyPath).FullName).Name.Substring(RevitVersion.Length - 2);
+        public string RevitVersion { get; set; }
 
         public string ReleaseTag => Debug ? "Debug" : "Release";
 
@@ -100,7 +110,25 @@ namespace AnlaxRevitUpdate
             }
         }
 
-        public ReleaseAsset ReleaseAsset => Release?.Assets.FirstOrDefault(a => a.Name.Contains("R" + RevitVersion));
+        public ReleaseAsset ReleaseAsset
+        {
+            get
+            {
+                if (Release!=null)
+                {
+                    var assets = Release.Assets;
+                    foreach (var asset in assets)
+                    {
+                        if (asset.Name.Contains("R" + RevitVersion))
+                        {
+                            return asset;
+                        }
+                    }
+                } 
+                return null;
+            }
+        }
+
 
         public string TempPathToDownload => Path.Combine(Path.GetTempPath(), FolderName + ".zip");
 
@@ -136,6 +164,11 @@ namespace AnlaxRevitUpdate
 
         public string HotReloadPlugin(bool checkDate)
         {
+            bool endLimit = IsRateLimitExceededAsync().GetAwaiter().GetResult();
+            if (endLimit)
+            {
+                return "Было больше 60 запросов за час. Повторите попытку позже";
+            }
             string result = string.Empty;
             if (checkDate && IsReleaseVersionGreater())
             {
@@ -149,21 +182,36 @@ namespace AnlaxRevitUpdate
             if (result == "Загрузка прошла успешно") DeleteOldAndUpdate();
             return result;
         }
-
+        public async Task<bool> IsRateLimitExceededAsync()
+        {
+            var client = new GitHubClient(new Octokit.ProductHeaderValue(RepposotoryName + "-Updater"));
+            var rateLimit = await client.RateLimit.GetRateLimits();
+            var coreRateLimit = rateLimit.Resources.Core;
+            return coreRateLimit.Remaining == 0;
+        }
         public string DownloadReleaseAsset()
         {
             try
             {
                 _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
-                var response = _client.GetAsync(ReleaseAsset.Url).Result;
-                response.EnsureSuccessStatusCode();
-
-                using (var stream = response.Content.ReadAsStreamAsync().Result)
-                using (var fileStream = new FileStream(TempPathToDownload, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
+                if (ReleaseAsset!=null)
                 {
-                    stream.CopyTo(fileStream);
+                    string urlRelease = ReleaseAsset.Url;
+                    var response = _client.GetAsync(urlRelease).Result;
+                    response.EnsureSuccessStatusCode();
+
+                    using (var stream = response.Content.ReadAsStreamAsync().Result)
+                    using (var fileStream = new FileStream(TempPathToDownload, System.IO.FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        stream.CopyTo(fileStream);
+                    }
+                    return "Загрузка прошла успешно";
+                }   
+                else
+                {
+                    return  "Не найден в релизе файла архива";
                 }
-                return "Загрузка прошла успешно";
+
             }
             catch (HttpRequestException ex)
             {

@@ -22,7 +22,7 @@
     <Grid>
         <Button x:Name="ButtonClose" Style="{StaticResource ButtonBase}" Content="ОК" HorizontalAlignment="Left" Margin="390,375,0,0" VerticalAlignment="Top" Height="35" Width="150" Click="ButtonClose_Click"/>
         <Button x:Name="ButtonAnik" Style="{StaticResource ButtonBase}" Content="АНЕКДОТ" HorizontalAlignment="Left" Margin="10,375,0,0" VerticalAlignment="Top" Height="35" Width="150" Click="ButtonAnik_Click"/>
-        <TextBlock x:Name="TextBlockMessage" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,34,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="525" Height="289" FontSize="12"/>
+        <TextBlock x:Name="TextBlockMessage" Style="{StaticResource BaseText}" HorizontalAlignment="Left" Margin="10,61,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="525" Height="262" FontSize="12"/>
         <ProgressBar x:Name="ProgressBarDownload" Style="{StaticResource CustomProgressBarStyle}" HorizontalAlignment="Center"  Margin="0,350,0,0" VerticalAlignment="Top" Width="530"/>
         <TextBlock x:Name="TextBlockDownload" Style="{StaticResource BaseText}"   HorizontalAlignment="Center" Margin="0,323,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="530" Height="22"><Run Language="ru-ru" Text="Начало загрузки"/></TextBlock>
         <Button x:Name="ButtonCancel" Content="Отмена" HorizontalAlignment="Left"  Margin="520,0,0,0" VerticalAlignment="Top" Style="{StaticResource CloseButton}" Click="Button_Click_Cancel"/>
@@ -34,5 +34,7 @@
             Width="419"
             Height="20"><Run Language="ru-ru" Text="АВТООБНОВЛЕНИЕ ПЛАГИНА "/><Run Text="ANLAX"/></TextBlock>
         <Button x:Name="ButtonRestart" Style="{StaticResource ButtonBase}" Content="ПЕРЕЗАПУСТИТЬ" HorizontalAlignment="Center" Margin="0,375,0,0" VerticalAlignment="Top" Height="35" Width="150" Click="ButtonRestart_Click" />
+        <TextBlock HorizontalAlignment="Left" Margin="10,31,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128"><Run Language="ru-ru" Text="Версия обновлятора"/></TextBlock>
+        <TextBlock x:Name="VersionBlock" HorizontalAlignment="Left" Margin="160,31,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="128" />
     </Grid>
 </Window>
