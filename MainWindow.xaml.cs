@@ -92,7 +92,7 @@ namespace AnlaxRevitUpdate
 
             if (runs)
             {
-                Thread.Sleep(5000);
+                Thread.Sleep(6000);
             }
 
             runs = IsRevitRunning(RevitVersion);
@@ -133,7 +133,8 @@ namespace AnlaxRevitUpdate
             else
             {
                 TextBlockMessage.Text = "Для проверки обновлений необходимо закрыть все сессии ревита";
-                Timer timer = new Timer(CloseWindowCallback, null, 3000, Timeout.Infinite);
+                Thread.Sleep(2000);
+                Close();
             }
         }
         private void CloseWindowCallback(object state)
