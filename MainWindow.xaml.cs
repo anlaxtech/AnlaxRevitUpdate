@@ -149,7 +149,9 @@ namespace AnlaxRevitUpdate
 
         private string ReloadMainPlug()
         {
-            string pathToBaseDll = System.IO.Path.Combine(PluginDirectory, "AnlaxBase.dll");
+            string nameDll = "AnlaxBase.dll";
+            if (IsDebug) { nameDll = "AnlaxBaseDev.dll"; }
+            string pathToBaseDll = System.IO.Path.Combine(PluginDirectory, nameDll);
             string userName = "anlaxtech";
             string repposotoryName = "AnlaxBase";
             var directoryInfo = new System.IO.DirectoryInfo(PluginDirectory);

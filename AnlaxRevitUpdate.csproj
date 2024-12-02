@@ -5,8 +5,8 @@
     <UseWPF>true</UseWPF>
     <TargetFramework>net48</TargetFramework>
     <Configurations>Debug;Release</Configurations>
-    <AssemblyFileVersion>1.1.5</AssemblyFileVersion>
-    <Version>1.1.5</Version>
+    <AssemblyFileVersion>1.1.6</AssemblyFileVersion>
+    <Version>1.1.6</Version>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
   </PropertyGroup>
